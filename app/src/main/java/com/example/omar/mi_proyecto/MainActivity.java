@@ -1,14 +1,37 @@
 package com.example.omar.mi_proyecto;
 
+import android.graphics.Color;
+import android.graphics.DashPathEffect;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.design.widget.TabLayout;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 
+import com.androidplot.util.PixelUtils;
+import com.androidplot.xy.BoundaryMode;
+import com.androidplot.xy.CatmullRomInterpolator;
+import com.androidplot.xy.LineAndPointFormatter;
+import com.androidplot.xy.PointLabelFormatter;
+import com.androidplot.xy.SimpleXYSeries;
+import com.androidplot.xy.XYPlot;
+import com.androidplot.xy.XYSeries;
+import com.androidplot.xy.XYStepMode;
+import com.example.omar.mi_proyecto.Adapters.ViewPagerAdapter;
+import com.example.omar.mi_proyecto.BancoDatos.AcumuladorPasos;
+import com.example.omar.mi_proyecto.BancoDatos.PuntoActividad;
+import com.example.omar.mi_proyecto.Plotter.Grafico;
+import com.example.omar.mi_proyecto.fragmentos.DetallesFragment;
+import com.example.omar.mi_proyecto.fragmentos.GraficoFragment;
+import com.example.omar.mi_proyecto.fragmentos.PasosFragment;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.Scopes;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -17,14 +40,18 @@ import com.google.android.gms.fitness.Fitness;
 import com.google.android.gms.fitness.data.Bucket;
 import com.google.android.gms.fitness.data.DataPoint;
 import com.google.android.gms.fitness.data.DataSet;
+import com.google.android.gms.fitness.data.DataSource;
 import com.google.android.gms.fitness.data.DataType;
 import com.google.android.gms.fitness.data.Field;
 import com.google.android.gms.fitness.request.DataReadRequest;
 import com.google.android.gms.fitness.result.DataReadResult;
 
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 import static java.text.DateFormat.getDateInstance;
@@ -36,22 +63,83 @@ public class MainActivity extends AppCompatActivity {
     private static final String DATE_FORMAT = "yyyy.MM.dd HH:mm:ss";
     private static final String AUTH_PENDING = "auth_state_pending";
     private boolean authInProgress = false;
-
+    //private int pasos;
     private GoogleApiClient mClient = null;
+    private TextView txt;
+    private boolean conectado=false;
+
+    private Toolbar toolbar;
+    private ViewPager viewPager;
+    private ViewPagerAdapter adapter;
+    private TabLayout tabLayout;
+    private int[] tabIcons = {
+            R.drawable.ic_pasos,
+            R.drawable.ic_grafico,
+            R.drawable.ic_action_news};
+    private int i=0;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+        viewPager = (ViewPager) findViewById(R.id.viewpager);
+        setupViewPager(viewPager);
+
+
+        tabLayout = (TabLayout) findViewById(R.id.tabs);
+        tabLayout.setTabMode(TabLayout.MODE_FIXED);
+        tabLayout.setupWithViewPager(viewPager);
+        setupTabIcons();
+
+        viewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
+        tabLayout.setOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                viewPager.setCurrentItem(tab.getPosition());
+                switch(tab.getPosition()){
+                    case(0):
+                        TextView tp = (TextView)findViewById(R.id.pasos);
+                        tp.setText(Integer.toString(AcumuladorPasos.pasosTotales()));//pasos*/
+                        break;
+                    case(1):
+
+                        break;
+                    case(2):
+                        break;
+                }
+            }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+
+            }
+
+
+        });
+
+
         if (savedInstanceState != null) {
             authInProgress = savedInstanceState.getBoolean(AUTH_PENDING);
         }
 
         buildFitnessClient();
-
+        /*
+        txt = (TextView) findViewById(R.id.pasos);
+        if (conectado){
+            new InsertAndVerifyDataTask().execute();
+            }*/
+        //txt = (TextView)findViewById(R.id.pasos);
+        //txt.setText(Integer.toString(AcumuladorPasos.getPasos()));
 
     }
 
@@ -67,6 +155,7 @@ public class MainActivity extends AppCompatActivity {
                                 Log.i(TAG, "Connected!!!");
                                 // Now you can make calls to the Fitness APIs.  What to do?
                                 // Look at some data!!
+                                //conectado = true;
                                 new InsertAndVerifyDataTask().execute();
                             }
 
@@ -74,6 +163,7 @@ public class MainActivity extends AppCompatActivity {
                             public void onConnectionSuspended(int i) {
                                 // If your connection to the sensor gets lost at some point,
                                 // you'll be able to determine the reason and react to it here.
+                                conectado=false;
                                 if (i == GoogleApiClient.ConnectionCallbacks.CAUSE_NETWORK_LOST) {
                                     Log.i(TAG, "Connection lost.  Cause: Network Lost.");
                                 } else if (i == GoogleApiClient.ConnectionCallbacks.CAUSE_SERVICE_DISCONNECTED) {
@@ -97,18 +187,52 @@ public class MainActivity extends AppCompatActivity {
         protected Void doInBackground(Void... params) {
             // Begin by creating the query.
             DataReadRequest readRequest = queryFitnessData();
+            AcumuladorPasos.borrarTodo();
+            i=0;
+                // [START read_dataset]
+                // Invoke the History API to fetch the data with the query and await the result of
+                // the read request.
+                DataReadResult dataReadResult =
+                        Fitness.HistoryApi.readData(mClient, readRequest).await(1, TimeUnit.MINUTES);
+                // [END read_dataset]
 
-            // [START read_dataset]
-            // Invoke the History API to fetch the data with the query and await the result of
-            // the read request.
-            DataReadResult dataReadResult =
-                    Fitness.HistoryApi.readData(mClient, readRequest).await(1, TimeUnit.MINUTES);
-            // [END read_dataset]
-
-            // For the sake of the sample, we'll print the data so we can see what we just added.
-            // In general, logging fitness information should be avoided for privacy reasons.
-            printData(dataReadResult);
+                // For the sake of the sample, we'll print the data so we can see what we just added.
+                // In general, logging fitness information should be avoided for privacy reasons.
+                printData(dataReadResult);
+            //AcumuladorPasos.subirred();
             return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            //no mostrar los pasos hasta que haya terminado de trabajar el hilo secundario
+            //AcumuladorPasos.subirred();
+            //mostramos los pasos
+            TextView tp = (TextView)findViewById(R.id.pasos);
+            tp.setText(Integer.toString(AcumuladorPasos.pasosTotales()));
+
+            Calendar calendario = Calendar.getInstance();
+            double  hora = calendario.get(Calendar.HOUR_OF_DAY)+(calendario.get(Calendar.MINUTE)/(double)60);
+            int pasos = AcumuladorPasos.pasosTotales();
+            XYPlot plot = (XYPlot) findViewById(R.id.plot);
+            // create a couple arrays of y-values to plot:
+            Grafico g = new Grafico(plot,getBaseContext());
+            if (hora<=1.52) {
+                g.establecerDominio(0, 1.5);
+            }else{
+                g.establecerDominio(hora-1.5,hora);
+            }
+            g.intervalosx(0.25);
+
+            /*if(pasos<=1000){
+                g.establecerRango(0, 1000);
+            }else{
+                g.establecerRango(pasos-2000,pasos+2000);
+            }*/
+            g.establecerRango(0, 500);
+            g.intervalosy(50);
+            g.dibujar();
         }
     }
 
@@ -116,12 +240,12 @@ public class MainActivity extends AppCompatActivity {
         // [START build_read_data_request]
         // Setting a start and end date using a range of 1 week before this moment.
         Calendar cal = Calendar.getInstance();
-        Date now = new Date();
-        cal.setTime(now);
+        cal.setTime(new Date());
+        //cal.set(2016,0,25,23,59,59);
         long endTime = cal.getTimeInMillis();
-        cal.add(Calendar.HOUR_OF_DAY, -1);
+        cal.set(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DATE), 0, 0, 0);
+        //cal.set(2016,0,25,0,0,0);
         long startTime = cal.getTimeInMillis();
-
         java.text.DateFormat dateFormat = getDateInstance();
         Log.i(TAG, "Range Start: " + dateFormat.format(startTime));
         Log.i(TAG, "Range End: " + dateFormat.format(endTime));
@@ -133,10 +257,14 @@ public class MainActivity extends AppCompatActivity {
                 // datapoints each consisting of a few steps and a timestamp.  The more likely
                 // scenario is wanting to see how many steps were walked per day, for 7 days.
                 .aggregate(DataType.TYPE_STEP_COUNT_DELTA, DataType.AGGREGATE_STEP_COUNT_DELTA)
+                        .aggregate(DataType.TYPE_ACTIVITY_SEGMENT,DataType.AGGREGATE_ACTIVITY_SUMMARY)
+                .aggregate(DataType.TYPE_DISTANCE_DELTA, DataType.AGGREGATE_DISTANCE_DELTA)
                         // Analogous to a "Group By" in SQL, defines how data should be aggregated.
                         // bucketByTime allows for a time span, whereas bucketBySession would allow
                         // bucketing by "sessions", which would need to be defined in code.
-                .bucketByTime(1, TimeUnit.DAYS)
+                //.bucketByTime(5, TimeUnit.MINUTES)
+                .bucketByActivitySegment(3, TimeUnit.MINUTES)
+                //.bucketByActivityType(5,TimeUnit.MINUTES)
                 .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
                 .build();
         // [END build_read_
@@ -151,6 +279,7 @@ public class MainActivity extends AppCompatActivity {
             Log.i(TAG, "Number of returned buckets of DataSets is: "
                     + dataReadResult.getBuckets().size());
             for (Bucket bucket : dataReadResult.getBuckets()) {
+                i++;
                 List<DataSet> dataSets = bucket.getDataSets();
                 for (DataSet dataSet : dataSets) {
                     dumpDataSet(dataSet);
@@ -172,14 +301,21 @@ public class MainActivity extends AppCompatActivity {
         java.text.DateFormat dateFormat = getTimeInstance();
 
         for (DataPoint dp : dataSet.getDataPoints()) {
-            Log.i(TAG, "Data point:");
-            Log.i(TAG, "\tType: " + dp.getDataType().getName());
+            //PuntoActividad pa = new PuntoActividad();
+            Log.i(TAG, "Data point: ");
+            Log.i(TAG, "\tType: bucket"+i+":" + dp.getDataType().getName());
+            //pa.setInicio(dateFormat.format(dp.getStartTime(TimeUnit.MILLISECONDS)));
             Log.i(TAG, "\tStart: " + dateFormat.format(dp.getStartTime(TimeUnit.MILLISECONDS)));
+            //pa.setFin(dateFormat.format(dp.getEndTime(TimeUnit.MILLISECONDS)));
             Log.i(TAG, "\tEnd: " + dateFormat.format(dp.getEndTime(TimeUnit.MILLISECONDS)));
             for(Field field : dp.getDataType().getFields()) {
+                //pasos = pasos + dp.getValue(field).asInt() ;
+                //pa.setNombreActividad(field.getName());
+                //pa.setPasos(dp.getValue(field).toString());
                 Log.i(TAG, "\tField: " + field.getName() +
                         " Value: " + dp.getValue(field));
             }
+            //AcumuladorPasos.add(pa);
         }
     }
 
@@ -205,8 +341,19 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void imprimirResutaldo(){
-        TextView pasos = (TextView) findViewById(R.id.pasos);
-        pasos.setText("Consulta exitosa");
+    private void setupViewPager(ViewPager viewPager) {
+        //ViewPagerAdapter
+        adapter = new ViewPagerAdapter(getSupportFragmentManager());
+        adapter.addFragment(new PasosFragment(), "PASOS");
+        adapter.addFragment(new GraficoFragment(), "GRAFICO");
+        adapter.addFragment(new DetallesFragment(), "DETALLES");
+        viewPager.setAdapter(adapter);
     }
+
+    private void setupTabIcons() {
+        tabLayout.getTabAt(0).setIcon(tabIcons[0]);
+        tabLayout.getTabAt(1).setIcon(tabIcons[1]);
+        tabLayout.getTabAt(2).setIcon(tabIcons[2]);
+    }
+
 }
