@@ -5,36 +5,103 @@
     android:layout_height="wrap_content"
     android:padding="5dp">
 
-    <!-- Imagen de perfil -->
-    <de.hdodenhof.circleimageview.CircleImageView
-        android:id="@+id/category"
-        android:layout_width="64dp"
-        android:layout_height="64dp"
-        android:layout_marginEnd="10dp"
-        android:layout_alignParentStart="true"
-        android:layout_centerVertical="true"
-        android:layout_marginBottom="16dp"
-        android:scaleType="centerCrop"
-        android:src="@drawable/ic_person_walking"
-        app:border_color="@android:color/black"
-        app:border_width="1dp" />
 
-    <TextView
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/encabezado"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="activividad__pasos"
-        android:id="@+id/numPasos"
-        android:textAppearance="@android:style/TextAppearance.Holo.Large"
-        android:textStyle="bold"
-        android:layout_above="@+id/horario"
-        android:layout_centerHorizontal="true" />
+        android:weightSum="1">
 
-    <TextView
-        android:layout_width="wrap_content"
+        <!-- Imagen de perfil -->
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/category"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_person_walking"
+            app:border_color="@android:color/black"
+            app:border_width="1dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentStart="true" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="actividad"
+            android:id="@+id/actividad"
+            android:layout_weight="0.32"
+            android:layout_gravity="center_vertical"
+            android:textAlignment="center" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="inicio"
+            android:id="@+id/inicio"
+            android:layout_weight="0.42"
+            android:layout_gravity="center_vertical"
+            android:textAlignment="center" />
+
+
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/pie"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="h.inicio____h.fin"
-        android:id="@+id/horario"
-        android:layout_alignBottom="@+id/category"
-        android:layout_alignStart="@+id/numPasos" />
+        android:layout_below="@+id/encabezado"
+        android:layout_alignParentStart="true">
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/ipasos"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_person_walking"
+            android:layout_below="@+id/category"
+            android:layout_marginStart="41dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text=" pasos "
+            android:id="@+id/pasos"
+            android:layout_gravity="center_vertical" />
+
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/idistancia"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_person_walking"
+            android:layout_below="@+id/category" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text=" distancia "
+            android:id="@+id/distancia"
+            android:layout_gravity="center_vertical" />
+
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/iduracion"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_person_walking"
+            android:layout_below="@+id/category" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text=" duracion "
+            android:id="@+id/duracion"
+            android:layout_gravity="center_vertical" />
+    </LinearLayout>
 
 </RelativeLayout>

@@ -67,7 +67,6 @@ public class MainActivity extends AppCompatActivity {
     private GoogleApiClient mClient = null;
     private TextView txt;
     private boolean conectado=false;
-
     private Toolbar toolbar;
     private ViewPager viewPager;
     private ViewPagerAdapter adapter;
@@ -76,8 +75,7 @@ public class MainActivity extends AppCompatActivity {
             R.drawable.ic_pasos,
             R.drawable.ic_grafico,
             R.drawable.ic_action_news};
-    private int i=0;
-
+    PuntoActividad pa=null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,15 +99,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 viewPager.setCurrentItem(tab.getPosition());
-                switch(tab.getPosition()){
-                    case(0):
-                        TextView tp = (TextView)findViewById(R.id.pasos);
-                        tp.setText(Integer.toString(AcumuladorPasos.pasosTotales()));//pasos*/
+                switch (tab.getPosition()) {
+                    case (0):
                         break;
-                    case(1):
+                    case (1):
 
                         break;
-                    case(2):
+                    case (2):
+
                         break;
                 }
             }
@@ -133,14 +130,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
         buildFitnessClient();
-        /*
-        txt = (TextView) findViewById(R.id.pasos);
-        if (conectado){
-            new InsertAndVerifyDataTask().execute();
-            }*/
-        //txt = (TextView)findViewById(R.id.pasos);
-        //txt.setText(Integer.toString(AcumuladorPasos.getPasos()));
-
     }
 
     private void buildFitnessClient() {
@@ -188,7 +177,6 @@ public class MainActivity extends AppCompatActivity {
             // Begin by creating the query.
             DataReadRequest readRequest = queryFitnessData();
             AcumuladorPasos.borrarTodo();
-            i=0;
                 // [START read_dataset]
                 // Invoke the History API to fetch the data with the query and await the result of
                 // the read request.
@@ -206,11 +194,13 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            //no mostrar los pasos hasta que haya terminado de trabajar el hilo secundario
-            //AcumuladorPasos.subirred();
             //mostramos los pasos
-            TextView tp = (TextView)findViewById(R.id.pasos);
-            tp.setText(Integer.toString(AcumuladorPasos.pasosTotales()));
+            if ((TextView)findViewById(R.id.pasos)!=null) {
+                TextView tp = (TextView) findViewById(R.id.pasos);
+                tp.setText(Integer.toString(AcumuladorPasos.pasosTotales()));
+            }
+            //no mostrar los pasos hasta que haya terminado de trabajar el hilo secundario
+            AcumuladorPasos.subirred();
 
             Calendar calendario = Calendar.getInstance();
             double  hora = calendario.get(Calendar.HOUR_OF_DAY)+(calendario.get(Calendar.MINUTE)/(double)60);
@@ -241,10 +231,10 @@ public class MainActivity extends AppCompatActivity {
         // Setting a start and end date using a range of 1 week before this moment.
         Calendar cal = Calendar.getInstance();
         cal.setTime(new Date());
-        //cal.set(2016,0,25,23,59,59);
+        //cal.set(2016,0,26,23,59,59);
         long endTime = cal.getTimeInMillis();
         cal.set(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DATE), 0, 0, 0);
-        //cal.set(2016,0,25,0,0,0);
+        //cal.set(2016,0,26,0,0,0);
         long startTime = cal.getTimeInMillis();
         java.text.DateFormat dateFormat = getDateInstance();
         Log.i(TAG, "Range Start: " + dateFormat.format(startTime));
@@ -279,29 +269,36 @@ public class MainActivity extends AppCompatActivity {
             Log.i(TAG, "Number of returned buckets of DataSets is: "
                     + dataReadResult.getBuckets().size());
             for (Bucket bucket : dataReadResult.getBuckets()) {
-                i++;
                 List<DataSet> dataSets = bucket.getDataSets();
+                pa = new PuntoActividad("0","0","0","0","0","0");
                 for (DataSet dataSet : dataSets) {
                     dumpDataSet(dataSet);
                 }
+                Log.i(TAG, pa.getPasos() + "," + pa.getNombreActividad() + "," + pa.getDuracion() + "," + pa.getDistancia() + ","+pa.getInicio()+","+pa.getFin());
+                AcumuladorPasos.add(pa);
             }
         } else if (dataReadResult.getDataSets().size() > 0) {
             Log.i(TAG, "Number of returned DataSets is: "
                     + dataReadResult.getDataSets().size());
+            pa = new PuntoActividad();
             for (DataSet dataSet : dataReadResult.getDataSets()) {
                 dumpDataSet(dataSet);
             }
+            Log.i(TAG, pa.getPasos() + "," + pa.getNombreActividad() + "," + pa.getDuracion() + "," + pa.getDistancia() + ","+pa.getInicio()+","+pa.getFin());
+            AcumuladorPasos.add(pa);
         }
+
         // [END parse_read_data_result]
     }
 
     // [START parse_dataset]
+    /*
     private void dumpDataSet(DataSet dataSet) {
         Log.i(TAG, "Data returned for Data type: " + dataSet.getDataType().getName());
         java.text.DateFormat dateFormat = getTimeInstance();
-
+        //nuevo
+        PuntoActividad pa = new PuntoActividad();
         for (DataPoint dp : dataSet.getDataPoints()) {
-            //PuntoActividad pa = new PuntoActividad();
             Log.i(TAG, "Data point: ");
             Log.i(TAG, "\tType: bucket"+i+":" + dp.getDataType().getName());
             //pa.setInicio(dateFormat.format(dp.getStartTime(TimeUnit.MILLISECONDS)));
@@ -317,6 +314,45 @@ public class MainActivity extends AppCompatActivity {
             }
             //AcumuladorPasos.add(pa);
         }
+    }*/
+
+    private void dumpDataSet(DataSet dataSet) {
+        Log.i(TAG, "Data returned for Data type: " + dataSet.getDataType().getName());
+        java.text.DateFormat dateFormat = getTimeInstance();
+        for (DataPoint dp : dataSet.getDataPoints()) {
+
+            Log.i(TAG, "Data point: ");
+            Log.i(TAG, "\tType: bucket: " + dp.getDataType().getName());
+            if (dp.getDataType().getName().equalsIgnoreCase("com.google.activity.summary")){
+                pa.setInicio(dateFormat.format(dp.getStartTime(TimeUnit.MILLISECONDS)));
+                Log.i(TAG, "\tStart: " + dateFormat.format(dp.getStartTime(TimeUnit.MILLISECONDS)));
+                pa.setFin(dateFormat.format(dp.getEndTime(TimeUnit.MILLISECONDS)));
+                Log.i(TAG, "\tEnd: " + dateFormat.format(dp.getEndTime(TimeUnit.MILLISECONDS)));
+            }
+
+            for(Field field : dp.getDataType().getFields()) {
+                if (field.getName().equalsIgnoreCase("steps")){
+                    pa.setPasos(dp.getValue(field).toString());
+                    Log.i(TAG, "\tField: " + field.getName() +
+                            " Value: " + dp.getValue(field));
+                }if (field.getName().equalsIgnoreCase("distance")){
+                    pa.setDistancia(dp.getValue(field).toString());
+                    Log.i(TAG, "\tField: " + field.getName() +
+                            " Value: " + dp.getValue(field));
+                }
+                if (field.getName().equalsIgnoreCase("activity")){
+                    pa.setNombreActividad(dp.getValue(field).toString());
+                    Log.i(TAG, "\tField: " + field.getName() +
+                            " Value: " + dp.getValue(field));
+                }
+                if (field.getName().equalsIgnoreCase("duration")){
+                    pa.setDuracion(dp.getValue(field).toString());
+                    Log.i(TAG, "\tField: " + field.getName() +
+                            " Value: " + dp.getValue(field));
+                }
+            }
+        }
+
     }
 
     @Override

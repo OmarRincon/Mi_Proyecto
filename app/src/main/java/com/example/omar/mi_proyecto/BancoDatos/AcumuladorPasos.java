@@ -1,6 +1,10 @@
 package com.example.omar.mi_proyecto.BancoDatos;
 
+import com.parse.FindCallback;
+import com.parse.GetCallback;
+import com.parse.ParseException;
 import com.parse.ParseObject;
+import com.parse.ParseQuery;
 
 import java.lang.reflect.Array;
 import java.text.DecimalFormat;
@@ -36,7 +40,14 @@ public final class AcumuladorPasos {
     }
 
     public static List<PuntoActividad> getLista(){
-        return detallesActividad;
+        List<PuntoActividad> actividad = new ArrayList<>();
+        for(PuntoActividad pa: detallesActividad){
+            if (pa.getNombreActividad().equalsIgnoreCase("0") ||pa.getNombreActividad().equalsIgnoreCase("1") || pa.getNombreActividad().equalsIgnoreCase("2")
+                    || pa.getNombreActividad().equalsIgnoreCase("7") || pa.getNombreActividad().equalsIgnoreCase("8")){
+                actividad.add(pa);
+            }
+        }
+        return actividad;
     }
 
     //si quiero diagrama xy
@@ -133,17 +144,20 @@ public final class AcumuladorPasos {
     }
 
     public static void subirred(){
-        ParseObject datepoint;
-        /*
-        for(PuntoActividad pa: detallesActividad){
-            datepoint = new ParseObject("PuntoActividad");
-            datepoint.put("inicio",pa.getInicio());
-            datepoint.put("fin",pa.getFin());
-            datepoint.put("Actividad",pa.getNombreActividad());
-            datepoint.put("pasos",pa.getPasos());
-            datepoint.saveInBackground();
-        }*/
+
+        for(final PuntoActividad pa: detallesActividad){
+                ParseObject datepoint = new ParseObject("PuntoActividad");
+                datepoint.put("inicio", pa.getInicio());
+                datepoint.put("fin", pa.getFin());
+                datepoint.put("nombreActividad", pa.getNombreActividad());
+                datepoint.put("pasos", pa.getPasos());
+                datepoint.put("duracion", pa.getDuracion());
+                datepoint.put("distancia", pa.getDistancia());
+                datepoint.saveInBackground();
+        }
     }
+
+
     public static boolean actividadNueva(){
         return true;
     }

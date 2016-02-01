@@ -1,14 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.omar.mi_proyecto" >
-
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    //permisos para poder salir a la red y conectar con la base de datos parse.com
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <application
+        android:name=".MyParse"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme" >
+        <meta-data android:name="com.parse.APPLICATION_ID" android:value="ohGe5NCSShiJYNeAAFwezBNYB7vQii8wyqnE21LY"/>
+        <meta-data android:name="com.parse.CLIENT_KEY" android:value="00gfPorhPo6HfdXPNhvvBSnvEFgBEWf8cLp6dKWZ"/>
         <activity
+            android:configChanges="screenSize|orientation"
             android:name=".MainActivity"
             android:label="@string/app_name"
             android:theme="@style/AppTheme.NoActionBar" >

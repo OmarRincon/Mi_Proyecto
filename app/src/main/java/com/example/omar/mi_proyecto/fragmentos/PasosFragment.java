@@ -31,7 +31,10 @@ public class PasosFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View rootview = inflater.inflate(R.layout.fragment_pasos, container, false);
-
+        TextView tp = (TextView) rootview.findViewById(R.id.pasos);
+        if(AcumuladorPasos.pasosTotales()>0) {
+            tp.setText(Integer.toString(AcumuladorPasos.pasosTotales()));
+        }
         return rootview;
     }
 
